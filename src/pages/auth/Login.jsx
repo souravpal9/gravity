@@ -1,18 +1,28 @@
 import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useTheme } from '../../context/ThemeContext';
+import { useAuth } from '../../context/AuthContext';
 import { Mail, Lock, ArrowRight, Briefcase, MessageCircle } from 'lucide-react';
 
 const Login = () => {
-    const { mode } = useTheme();
+    const { mode, setMode } = useTheme();
+    const { login, error } = useAuth();
     const navigate = useNavigate();
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
+    const [formError, setFormError] = useState('');
 
     const handleSubmit = (e) => {
         e.preventDefault();
-        // Mock login logic
-        console.log(`Logging in to ${mode} mode with`, { email, password });
+        setFormError('');
+        const result = login({ email, password });
+        if (!result.ok) {
+            setFormError('Please check your credentials and try again.');
+            return;
+        }
+        if (result.user?.mode) {
+            setMode(result.user.mode);
+        }
         navigate('/dashboard');
     };
 
@@ -84,6 +94,11 @@ const Login = () => {
                 </div>
 
                 <form onSubmit={handleSubmit} className="space-y-6">
+                    {(formError || error) && (
+                        <div className="rounded-xl border border-red-500/40 bg-red-500/10 px-4 py-3 text-sm text-red-200">
+                            {formError || error}
+                        </div>
+                    )}
                     <div className="space-y-2">
                         <label className="text-sm font-medium text-slate-300">Email Address</label>
                         <div className="relative">
