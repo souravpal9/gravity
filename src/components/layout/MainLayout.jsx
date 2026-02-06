@@ -8,32 +8,33 @@ import { useTheme } from '../../context/ThemeContext';
 
 const MainLayout = () => {
     const [isSettingsOpen, setIsSettingsOpen] = useState(false);
-    const { mode } = useTheme();
+    const { mode, currentTheme } = useTheme();
 
     const getThemeStyles = () => {
+        const isDark = currentTheme === 'dark';
         switch (mode) {
             case 'professional':
                 return {
-                    bg: 'bg-slate-900',
-                    text: 'text-slate-100',
-                    headerBg: 'bg-slate-900/80 border-slate-700',
-                    logoBg: 'bg-blue-600',
+                    bg: isDark ? 'bg-slate-900' : 'bg-slate-100',
+                    text: isDark ? 'text-slate-100' : 'text-slate-900',
+                    headerBg: isDark ? 'bg-slate-900/80 border-slate-700' : 'bg-white/80 border-slate-200',
+                    logoBg: isDark ? 'bg-blue-600' : 'bg-blue-500',
                     title: 'ProConnect'
                 };
             case 'personal':
                 return {
-                    bg: 'bg-slate-950',
-                    text: 'text-emerald-50',
-                    headerBg: 'bg-slate-950/80 border-emerald-900/30',
-                    logoBg: 'bg-emerald-600',
+                    bg: isDark ? 'bg-slate-950' : 'bg-emerald-50',
+                    text: isDark ? 'text-emerald-50' : 'text-emerald-950',
+                    headerBg: isDark ? 'bg-slate-950/80 border-emerald-900/30' : 'bg-emerald-50/80 border-emerald-200',
+                    logoBg: isDark ? 'bg-emerald-600' : 'bg-emerald-500',
                     title: 'Personal'
                 };
             case 'mail':
                 return {
-                    bg: 'bg-slate-950',
-                    text: 'text-purple-50',
-                    headerBg: 'bg-slate-950/80 border-purple-900/30',
-                    logoBg: 'bg-purple-600',
+                    bg: isDark ? 'bg-slate-950' : 'bg-purple-50',
+                    text: isDark ? 'text-purple-50' : 'text-purple-950',
+                    headerBg: isDark ? 'bg-slate-950/80 border-purple-900/30' : 'bg-purple-50/80 border-purple-200',
+                    logoBg: isDark ? 'bg-purple-600' : 'bg-purple-500',
                     title: 'MailBox'
                 };
             default:

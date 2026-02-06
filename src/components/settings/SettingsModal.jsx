@@ -1,11 +1,13 @@
 import React, { useState } from 'react';
 import { X, User, Bell, Shield, Moon, Monitor, LogOut, Check } from 'lucide-react';
 import { useTheme } from '../../context/ThemeContext';
+import { useAuth } from '../../context/AuthContext';
 import { useNavigate } from 'react-router-dom';
 
 const SettingsModal = ({ isOpen, onClose }) => {
     const { mode } = useTheme();
     const navigate = useNavigate();
+    const { logout } = useAuth();
     const [activeTab, setActiveTab] = useState('profile');
 
     if (!isOpen) return null;
@@ -50,21 +52,23 @@ const SettingsModal = ({ isOpen, onClose }) => {
     ];
 
     const handleLogout = () => {
+        logout();
+        onClose();
         navigate('/login');
     };
 
     return (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4 animate-in fade-in duration-200">
-            <div className={`w-full max-w-4xl h-[80vh] ${colors.bg} border ${colors.border} rounded-2xl shadow-2xl flex overflow-hidden`}>
+            <div className={`w-full max-w-4xl max-h-[90vh] md:h-[80vh] ${colors.bg} border ${colors.border} rounded-2xl shadow-2xl flex flex-col md:flex-row overflow-hidden`}>
                 {/* Sidebar */}
-                <div className={`w-64 border-r ${colors.border} p-4 flex flex-col bg-black/20`}>
-                    <h2 className="text-xl font-bold text-white mb-6 px-2">Settings</h2>
-                    <div className="space-y-1 flex-1">
+                <div className={`w-full md:w-64 border-b md:border-b-0 md:border-r ${colors.border} p-4 flex flex-col bg-black/20`}>
+                    <h2 className="text-xl font-bold text-white mb-4 px-2">Settings</h2>
+                    <div className="flex md:flex-col gap-2 md:gap-1 overflow-x-auto md:overflow-visible pb-2 md:pb-0">
                         {tabs.map((tab) => (
                             <button
                                 key={tab.id}
                                 onClick={() => setActiveTab(tab.id)}
-                                className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-all font-medium ${activeTab === tab.id
+                                className={`flex items-center gap-3 px-4 py-2 md:py-3 rounded-xl transition-all font-medium whitespace-nowrap ${activeTab === tab.id
                                     ? colors.active
                                     : 'text-slate-400 hover:text-slate-200 ' + colors.hover
                                     }`}
@@ -76,7 +80,7 @@ const SettingsModal = ({ isOpen, onClose }) => {
                     </div>
                     <button
                         onClick={handleLogout}
-                        className="flex items-center gap-3 px-4 py-3 rounded-xl text-red-400 hover:bg-red-500/10 transition-colors mt-auto font-medium"
+                        className="flex items-center gap-3 px-4 py-3 rounded-xl text-red-400 hover:bg-red-500/10 transition-colors md:mt-auto font-medium"
                     >
                         <LogOut size={20} />
                         Log Out

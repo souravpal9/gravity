@@ -8,6 +8,7 @@ import ProfessionalDashboard from './pages/dashboard/ProfessionalDashboard';
 import PersonalDashboard from './pages/dashboard/PersonalDashboard';
 import MailDashboard from './pages/dashboard/MailDashboard';
 import { useTheme } from './context/ThemeContext';
+import { useAuth } from './context/AuthContext';
 
 const DashboardRoute = () => {
   const { mode } = useTheme();
@@ -17,15 +18,25 @@ const DashboardRoute = () => {
 
 function App() {
   const { getThemeClass } = useTheme();
+  const { isAuthenticated } = useAuth();
 
   return (
     <div className={getThemeClass()}>
       <Routes>
         <Route path="/" element={<MainLayout />}>
           <Route index element={<AuthSelection />} />
-          <Route path="login" element={<Login />} />
-          <Route path="signup" element={<Signup />} />
-          <Route path="dashboard" element={<DashboardRoute />} />
+          <Route
+            path="login"
+            element={isAuthenticated ? <Navigate to="/dashboard" replace /> : <Login />}
+          />
+          <Route
+            path="signup"
+            element={isAuthenticated ? <Navigate to="/dashboard" replace /> : <Signup />}
+          />
+          <Route
+            path="dashboard"
+            element={isAuthenticated ? <DashboardRoute /> : <Navigate to="/login" replace />}
+          />
           {/* Catch all redirect */}
           <Route path="*" element={<Navigate to="/" replace />} />
         </Route>
