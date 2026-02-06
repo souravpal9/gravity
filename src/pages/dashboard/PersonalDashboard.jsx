@@ -6,6 +6,8 @@ import TemplateToggle from '../../components/common/TemplateToggle';
 import SettingsModal from '../../components/common/SettingsModal';
 import CallInterface from '../../components/common/CallInterface';
 import { useTheme } from '../../context/ThemeContext';
+import { useAuth } from '../../context/AuthContext';
+import { useRealtimeChat } from '../../hooks/useRealtimeChat';
 
 const PersonalDashboard = () => {
     const { dashboardThemes } = useTheme();
@@ -14,10 +16,11 @@ const PersonalDashboard = () => {
     const [inputText, setInputText] = useState('');
     const [replyingTo, setReplyingTo] = useState(null);
     const [isSettingsOpen, setIsSettingsOpen] = useState(false);
-    const [messages, setMessages] = useState([
-        { id: 1, text: "Hey! How's it going?", isMe: false },
-        { id: 2, text: "Pretty good! Just working on this new app. It's coming along nicely.", isMe: true }
-    ]);
+    const { user } = useAuth();
+    const { messages, sendMessage, status } = useRealtimeChat({
+        room: activeChat ? `personal-${activeChat}` : null,
+        user
+    });
     const isMobile = useMediaQuery('(max-width: 767px)');
     const messagesEndRef = React.useRef(null);
 
@@ -39,14 +42,7 @@ const PersonalDashboard = () => {
     const handleSend = () => {
         if (!inputText.trim()) return;
 
-        const newMessage = {
-            id: Date.now(),
-            text: inputText,
-            isMe: true,
-            replyTo: replyingTo
-        };
-
-        setMessages([...messages, newMessage]);
+        sendMessage(inputText, { replyTo: replyingTo });
         setInputText('');
         setReplyingTo(null);
     };
@@ -129,7 +125,8 @@ const PersonalDashboard = () => {
                                         <div>
                                             <h3 className="font-bold text-slate-800 dark:text-primary-50">Friend Name {activeChat}</h3>
                                             <span className="text-xs text-primary-400 flex items-center gap-1">
-                                                <span className="w-2 h-2 rounded-full bg-primary-500 animate-pulse" /> Online
+                                                <span className={`w-2 h-2 rounded-full ${status === 'online' ? 'bg-primary-500 animate-pulse' : 'bg-slate-400'}`} />
+                                                {status === 'online' ? 'Live' : 'Offline'}
                                             </span>
                                         </div>
                                     </div>
@@ -159,17 +156,19 @@ const PersonalDashboard = () => {
 
                                 {/* Messages */}
                                 <div className="flex-1 p-6 overflow-y-auto space-y-4 bg-slate-50 dark:bg-slate-950/30">
-                                    {messages.map((msg) => (
-                                        <div key={msg.id} className={`flex flex-col ${msg.isMe ? 'items-end' : 'items-start'}`}>
-                                            <div className={`group relative flex items-center gap-2 max-w-[85%] md:max-w-[70%] ${msg.isMe ? 'flex-row-reverse' : 'flex-row'}`}>
+                                    {messages.map((msg) => {
+                                        const isMe = msg.user?.id === user?.id;
+                                        return (
+                                        <div key={msg.id} className={`flex flex-col ${isMe ? 'items-end' : 'items-start'}`}>
+                                            <div className={`group relative flex items-center gap-2 max-w-[85%] md:max-w-[70%] ${isMe ? 'flex-row-reverse' : 'flex-row'}`}>
 
                                                 {/* Message Bubble */}
-                                                <div className={`relative px-4 py-2 rounded-2xl ${msg.isMe
+                                                <div className={`relative px-4 py-2 rounded-2xl ${isMe
                                                     ? 'bg-primary-600 text-white rounded-tr-none'
                                                     : 'bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-200 border border-slate-200 dark:border-transparent rounded-tl-none shadow-sm dark:shadow-none'
                                                     }`}>
                                                     {msg.replyTo && (
-                                                        <div className={`text-xs mb-1 pb-1 border-b ${msg.isMe ? 'border-primary-500 text-primary-100' : 'border-slate-200 dark:border-slate-700 text-slate-500 dark:text-slate-400'}`}>
+                                                        <div className={`text-xs mb-1 pb-1 border-b ${isMe ? 'border-primary-500 text-primary-100' : 'border-slate-200 dark:border-slate-700 text-slate-500 dark:text-slate-400'}`}>
                                                             Replying to: {msg.replyTo.text.substring(0, 30)}...
                                                         </div>
                                                     )}
@@ -194,7 +193,8 @@ const PersonalDashboard = () => {
                                                 </div>
                                             </div>
                                         </div>
-                                    ))}
+                                        );
+                                    })}
                                     <div ref={messagesEndRef} />
                                 </div>
 
@@ -203,7 +203,7 @@ const PersonalDashboard = () => {
                                     {replyingTo && (
                                         <div className="mb-2 flex items-center justify-between p-2 bg-slate-100 dark:bg-slate-800 rounded-lg border-l-4 border-primary-500">
                                             <div className="text-sm">
-                                                <span className="text-primary-600 dark:text-primary-400 font-medium block">Replying to {replyingTo.isMe ? 'yourself' : 'Friend'}</span>
+                                                <span className="text-primary-600 dark:text-primary-400 font-medium block">Replying to {replyingTo.user?.name || 'Friend'}</span>
                                                 <span className="text-slate-500 dark:text-slate-400 truncate block max-w-xs">{replyingTo.text}</span>
                                             </div>
                                             <button

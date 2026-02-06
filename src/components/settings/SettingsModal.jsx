@@ -7,7 +7,7 @@ import { useNavigate } from 'react-router-dom';
 const SettingsModal = ({ isOpen, onClose }) => {
     const { mode } = useTheme();
     const navigate = useNavigate();
-    const { logout } = useAuth();
+    const { logout, isAuthenticated } = useAuth();
     const [activeTab, setActiveTab] = useState('profile');
 
     if (!isOpen) return null;
@@ -78,13 +78,15 @@ const SettingsModal = ({ isOpen, onClose }) => {
                             </button>
                         ))}
                     </div>
-                    <button
-                        onClick={handleLogout}
-                        className="flex items-center gap-3 px-4 py-3 rounded-xl text-red-400 hover:bg-red-500/10 transition-colors md:mt-auto font-medium"
-                    >
-                        <LogOut size={20} />
-                        Log Out
-                    </button>
+                    {isAuthenticated && (
+                        <button
+                            onClick={handleLogout}
+                            className="flex items-center gap-3 px-4 py-3 rounded-xl text-red-400 hover:bg-red-500/10 transition-colors md:mt-auto font-medium"
+                        >
+                            <LogOut size={20} />
+                            Log Out
+                        </button>
+                    )}
                 </div>
 
                 {/* Content */}
