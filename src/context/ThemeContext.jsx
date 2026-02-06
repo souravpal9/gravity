@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useState, useEffect } from 'react';
+import React, { createContext, useContext, useState, useEffect, useMemo } from 'react';
 
 const ThemeContext = createContext();
 
@@ -20,11 +20,24 @@ export const ThemeProvider = ({ children }) => {
         localStorage.setItem('dashboardThemes', JSON.stringify(dashboardThemes));
     }, [dashboardThemes]);
 
-    const toggleTheme = (scope) => {
-        setDashboardThemes(prev => ({
-            ...prev,
-            [scope]: prev[scope] === 'dark' ? 'light' : 'dark'
-        }));
+    const currentTheme = dashboardThemes[mode] || 'dark';
+
+    useEffect(() => {
+        const root = document.documentElement;
+        if (currentTheme === 'dark') {
+            root.classList.add('dark');
+        } else {
+            root.classList.remove('dark');
+        }
+    }, [currentTheme]);
+
+    const toggleTheme = () => {
+        const nextTheme = currentTheme === 'dark' ? 'light' : 'dark';
+        setDashboardThemes({
+            professional: nextTheme,
+            personal: nextTheme,
+            mail: nextTheme
+        });
     };
 
     const setTheme = (scope, value) => {
@@ -49,18 +62,20 @@ export const ThemeProvider = ({ children }) => {
         }
     };
 
-    return (
-        <ThemeContext.Provider value={{
+    const value = useMemo(
+        () => ({
             mode,
             setMode,
             dashboardThemes,
+            currentTheme,
             toggleTheme,
             setTheme,
             themeTemplate,
             toggleTemplate,
             getThemeClass
-        }}>
-            {children}
-        </ThemeContext.Provider>
+        }),
+        [mode, dashboardThemes, currentTheme, themeTemplate]
     );
+
+    return <ThemeContext.Provider value={value}>{children}</ThemeContext.Provider>;
 };

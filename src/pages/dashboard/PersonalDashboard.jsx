@@ -6,18 +6,21 @@ import TemplateToggle from '../../components/common/TemplateToggle';
 import SettingsModal from '../../components/common/SettingsModal';
 import CallInterface from '../../components/common/CallInterface';
 import { useTheme } from '../../context/ThemeContext';
+import { useAuth } from '../../context/AuthContext';
+import { useRealtimeChat } from '../../hooks/useRealtimeChat';
 
 const PersonalDashboard = () => {
-    const { dashboardThemes } = useTheme();
+    const { currentTheme } = useTheme();
     const [activeChat, setActiveChat] = useState(null);
     const [callData, setCallData] = useState({ isOpen: false, type: 'voice' });
     const [inputText, setInputText] = useState('');
     const [replyingTo, setReplyingTo] = useState(null);
     const [isSettingsOpen, setIsSettingsOpen] = useState(false);
-    const [messages, setMessages] = useState([
-        { id: 1, text: "Hey! How's it going?", isMe: false },
-        { id: 2, text: "Pretty good! Just working on this new app. It's coming along nicely.", isMe: true }
-    ]);
+    const { user } = useAuth();
+    const { messages, sendMessage, status } = useRealtimeChat({
+        room: activeChat ? `personal-${activeChat}` : null,
+        user
+    });
     const isMobile = useMediaQuery('(max-width: 767px)');
     const messagesEndRef = React.useRef(null);
 
@@ -39,14 +42,7 @@ const PersonalDashboard = () => {
     const handleSend = () => {
         if (!inputText.trim()) return;
 
-        const newMessage = {
-            id: Date.now(),
-            text: inputText,
-            isMe: true,
-            replyTo: replyingTo
-        };
-
-        setMessages([...messages, newMessage]);
+        sendMessage(inputText, { replyTo: replyingTo });
         setInputText('');
         setReplyingTo(null);
     };
@@ -58,7 +54,7 @@ const PersonalDashboard = () => {
     };
 
     return (
-        <div className={dashboardThemes.personal === 'dark' ? 'dark' : ''}>
+        <div className={currentTheme === 'dark' ? 'dark' : ''}>
             <div className="w-full flex h-[calc(100vh-8rem)] bg-white dark:bg-primary-950 border border-slate-200 dark:border-primary-900 rounded-2xl overflow-hidden relative">
                 <SettingsModal isOpen={isSettingsOpen} onClose={() => setIsSettingsOpen(false)} scope="personal" />
 
@@ -86,26 +82,28 @@ const PersonalDashboard = () => {
                                 <SettingsIcon size={20} />
                             </button>
                         </div>
-                        <div className="flex-1 overflow-y-auto">
-                            {[1, 2, 3, 4, 5, 6].map((i) => (
-                                <div
-                                    key={i}
-                                    onClick={() => setActiveChat(i)}
-                                    className="p-4 hover:bg-primary-50 dark:hover:bg-primary-900/10 cursor-pointer transition-colors border-b border-slate-100 dark:border-primary-900/10 last:border-0"
-                                >
-                                    <div className="flex gap-3">
-                                        <div className="w-12 h-12 rounded-full bg-primary-100 dark:bg-primary-800/30 flex-shrink-0" />
-                                        <div className="flex-1 min-w-0">
-                                            <div className="flex justify-between items-start mb-1">
-                                                <h4 className="font-medium text-slate-800 dark:text-primary-50 truncate">Friend Name {i}</h4>
-                                                <span className="text-xs text-slate-500">12:30 PM</span>
-                                            </div>
-                                            <p className="text-slate-500 dark:text-slate-400 text-sm truncate">Hey, are we still on for tonight?</p>
+                    </div>
+                    <div className="flex-1 overflow-y-auto">
+                        {[1, 2, 3, 4, 5, 6].map((i) => (
+                            <div
+                                key={i}
+                                onClick={() => setActiveChat(i)}
+                                className={`p-4 cursor-pointer transition-colors border-b border-slate-100 dark:border-primary-900/10 last:border-0 ${activeChat === i ? 'bg-primary-50 dark:bg-primary-900/20' : 'hover:bg-primary-50/60 dark:hover:bg-primary-900/10'}`}
+                            >
+                                <div className="flex gap-3 items-center">
+                                    <div className="w-12 h-12 rounded-full bg-primary-100 dark:bg-primary-800/30 flex-shrink-0 flex items-center justify-center text-primary-600 dark:text-primary-300 font-semibold">
+                                        {`F${i}`}
+                                    </div>
+                                    <div className="flex-1 min-w-0">
+                                        <div className="flex justify-between items-start mb-1">
+                                            <h4 className="font-semibold text-slate-800 dark:text-primary-50 truncate">Friend {i}</h4>
+                                            <span className="text-xs text-slate-500">12:30 PM</span>
                                         </div>
+                                        <p className="text-slate-500 dark:text-slate-400 text-sm truncate">Let’s catch up after work?</p>
                                     </div>
                                 </div>
-                            ))}
-                        </div>
+                            </div>
+                        ))}
                     </div>
 
                     {/* Chat Area */}
@@ -129,7 +127,8 @@ const PersonalDashboard = () => {
                                         <div>
                                             <h3 className="font-bold text-slate-800 dark:text-primary-50">Friend Name {activeChat}</h3>
                                             <span className="text-xs text-primary-400 flex items-center gap-1">
-                                                <span className="w-2 h-2 rounded-full bg-primary-500 animate-pulse" /> Online
+                                                <span className={`w-2 h-2 rounded-full ${status === 'online' ? 'bg-primary-500 animate-pulse' : 'bg-slate-400'}`} />
+                                                {status === 'online' ? 'Live' : 'Offline'}
                                             </span>
                                         </div>
                                     </div>
@@ -158,18 +157,30 @@ const PersonalDashboard = () => {
                                 </div>
 
                                 {/* Messages */}
-                                <div className="flex-1 p-6 overflow-y-auto space-y-4 bg-slate-50 dark:bg-slate-950/30">
-                                    {messages.map((msg) => (
-                                        <div key={msg.id} className={`flex flex-col ${msg.isMe ? 'items-end' : 'items-start'}`}>
-                                            <div className={`group relative flex items-center gap-2 max-w-[85%] md:max-w-[70%] ${msg.isMe ? 'flex-row-reverse' : 'flex-row'}`}>
+                                <div className="flex-1 p-6 overflow-y-auto space-y-4 bg-primary-50/60 dark:bg-slate-950/30">
+                                    {messages.length === 0 && (
+                                        <div className="h-full flex flex-col items-center justify-center text-slate-500 dark:text-slate-400">
+                                            <MessageCircle size={44} className="mb-3 opacity-40" />
+                                            <p className="text-sm">Start the conversation with a friendly hello.</p>
+                                        </div>
+                                    )}
+                                    {messages.map((msg) => {
+                                        const isMe = msg.user?.id === user?.id;
+                                        return (
+                                        <div key={msg.id} className={`flex flex-col gap-1 ${isMe ? 'items-end' : 'items-start'}`}>
+                                            <div className={`flex items-center gap-2 text-xs ${isMe ? 'text-primary-600 dark:text-primary-300' : 'text-slate-500 dark:text-slate-400'}`}>
+                                                <span className="font-semibold">{isMe ? 'You' : msg.user?.name || 'Friend'}</span>
+                                                <span>{msg.time}</span>
+                                            </div>
+                                            <div className={`group relative flex items-center gap-2 max-w-[85%] md:max-w-[70%] ${isMe ? 'flex-row-reverse' : 'flex-row'}`}>
 
                                                 {/* Message Bubble */}
-                                                <div className={`relative px-4 py-2 rounded-2xl ${msg.isMe
+                                                <div className={`relative px-4 py-2 rounded-2xl shadow-sm ${isMe
                                                     ? 'bg-primary-600 text-white rounded-tr-none'
-                                                    : 'bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-200 border border-slate-200 dark:border-transparent rounded-tl-none shadow-sm dark:shadow-none'
+                                                    : 'bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-200 border border-slate-200/70 dark:border-slate-700/60 rounded-tl-none'
                                                     }`}>
                                                     {msg.replyTo && (
-                                                        <div className={`text-xs mb-1 pb-1 border-b ${msg.isMe ? 'border-primary-500 text-primary-100' : 'border-slate-200 dark:border-slate-700 text-slate-500 dark:text-slate-400'}`}>
+                                                        <div className={`text-xs mb-1 pb-1 border-b ${isMe ? 'border-primary-500 text-primary-100' : 'border-slate-200 dark:border-slate-700 text-slate-500 dark:text-slate-400'}`}>
                                                             Replying to: {msg.replyTo.text.substring(0, 30)}...
                                                         </div>
                                                     )}
@@ -194,7 +205,8 @@ const PersonalDashboard = () => {
                                                 </div>
                                             </div>
                                         </div>
-                                    ))}
+                                        );
+                                    })}
                                     <div ref={messagesEndRef} />
                                 </div>
 
@@ -203,7 +215,7 @@ const PersonalDashboard = () => {
                                     {replyingTo && (
                                         <div className="mb-2 flex items-center justify-between p-2 bg-slate-100 dark:bg-slate-800 rounded-lg border-l-4 border-primary-500">
                                             <div className="text-sm">
-                                                <span className="text-primary-600 dark:text-primary-400 font-medium block">Replying to {replyingTo.isMe ? 'yourself' : 'Friend'}</span>
+                                                <span className="text-primary-600 dark:text-primary-400 font-medium block">Replying to {replyingTo.user?.name || 'Friend'}</span>
                                                 <span className="text-slate-500 dark:text-slate-400 truncate block max-w-xs">{replyingTo.text}</span>
                                             </div>
                                             <button

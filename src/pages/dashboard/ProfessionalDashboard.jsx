@@ -6,9 +6,11 @@ import TemplateToggle from '../../components/common/TemplateToggle';
 import SettingsModal from '../../components/common/SettingsModal';
 import CallInterface from '../../components/common/CallInterface';
 import { useTheme } from '../../context/ThemeContext';
+import { useAuth } from '../../context/AuthContext';
+import { useRealtimeChat } from '../../hooks/useRealtimeChat';
 
 const ProfessionalDashboard = () => {
-    const { dashboardThemes } = useTheme();
+    const { currentTheme } = useTheme();
     const [activeChannel, setActiveChannel] = useState('general');
     const [activeTeam, setActiveTeam] = useState('engineering');
     const [isSidebarOpen, setIsSidebarOpen] = useState(false);
@@ -16,11 +18,11 @@ const ProfessionalDashboard = () => {
     const [isSettingsOpen, setIsSettingsOpen] = useState(false);
     const [inputText, setInputText] = useState('');
     const [replyingTo, setReplyingTo] = useState(null);
-    const [messages, setMessages] = useState([
-        { id: 1, user: 'Sarah Engineer', time: '10:41 AM', content: "Here is the update for the channel. We've made significant progress on the new feature set." },
-        { id: 2, user: 'Mike Designer', time: '10:42 AM', content: "That looks great! I'll have the new assets ready by EOD." },
-        { id: 3, user: 'Alex Manager', time: '10:45 AM', content: "Awesome work team. Let's sync up tomorrow morning." }
-    ]);
+    const { user } = useAuth();
+    const { messages, sendMessage, status } = useRealtimeChat({
+        room: `professional-${activeChannel}`,
+        user
+    });
     const isMobile = useMediaQuery('(max-width: 767px)');
     const messagesEndRef = React.useRef(null);
 
@@ -43,15 +45,7 @@ const ProfessionalDashboard = () => {
     const handleSend = () => {
         if (!inputText.trim()) return;
 
-        const newMessage = {
-            id: Date.now(),
-            user: 'You',
-            time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
-            content: inputText,
-            replyTo: replyingTo
-        };
-
-        setMessages([...messages, newMessage]);
+        sendMessage(inputText, { replyTo: replyingTo });
         setInputText('');
         setReplyingTo(null);
     };
@@ -70,7 +64,7 @@ const ProfessionalDashboard = () => {
     ];
 
     return (
-        <div className={dashboardThemes.professional === 'dark' ? 'dark' : ''}>
+        <div className={currentTheme === 'dark' ? 'dark' : ''}>
             <div className="w-full flex h-[calc(100vh-8rem)] bg-white dark:bg-primary-950 border border-slate-200 dark:border-primary-900 rounded-2xl overflow-hidden relative text-slate-900 dark:text-primary-100">
                 <SettingsModal isOpen={isSettingsOpen} onClose={() => setIsSettingsOpen(false)} scope="professional" />
 
@@ -152,6 +146,9 @@ const ProfessionalDashboard = () => {
                             </span>
                         </div>
                         <div className="flex items-center gap-4 flex-shrink-0">
+                            <span className={`text-xs font-semibold ${status === 'online' ? 'text-emerald-400' : 'text-slate-400'}`}>
+                                {status === 'online' ? 'Live' : 'Offline'}
+                            </span>
                             <div className="flex -space-x-2 hidden lg:flex">
                                 {[1, 2, 3].map((i) => (
                                     <div key={i} className="w-8 h-8 rounded-full bg-slate-700 border-2 border-slate-900 flex items-center justify-center text-xs font-medium text-white">
@@ -191,44 +188,56 @@ const ProfessionalDashboard = () => {
                     </div>
 
                     {/* Messages */}
-                    <div className="flex-1 overflow-y-auto p-4 md:p-6 space-y-6">
-                        {messages.map((msg) => (
-                            <div key={msg.id} className="group flex gap-4">
-                                <div className={`w-10 h-10 rounded-lg flex-shrink-0 ${msg.user === 'You' ? 'bg-primary-600' : 'bg-gradient-to-br from-primary-500 to-purple-600'}`} />
-                                <div className="flex-1 min-w-0">
-                                    <div className="flex items-baseline gap-2 mb-1">
-                                        <span className="font-bold text-slate-800 dark:text-slate-200 truncate">{msg.user}</span>
-                                        <span className="text-xs text-slate-500">{msg.time}</span>
+                    <div className="flex-1 overflow-y-auto p-4 md:p-6 space-y-6 bg-primary-50/50 dark:bg-primary-950/30">
+                        {messages.length === 0 && (
+                            <div className="h-full flex flex-col items-center justify-center text-slate-500 dark:text-slate-400">
+                                <Hash size={44} className="mb-3 opacity-40" />
+                                <p className="text-sm">Start a new update in #{activeChannel}.</p>
+                            </div>
+                        )}
+                        {messages.map((msg) => {
+                            const isMe = msg.user?.id === user?.id;
+                            return (
+                            <div key={msg.id} className={`group flex gap-4 ${isMe ? 'justify-end' : 'justify-start'}`}>
+                                <div className={`flex gap-4 ${isMe ? 'flex-row-reverse' : 'flex-row'} max-w-[85%] md:max-w-[70%]`}>
+                                    <div className={`w-10 h-10 rounded-lg flex-shrink-0 ${isMe ? 'bg-primary-600 text-white' : 'bg-gradient-to-br from-primary-500 to-purple-600 text-white'} flex items-center justify-center font-semibold`}>
+                                        {isMe ? 'Y' : (msg.user?.name || 'G').charAt(0)}
                                     </div>
-                                    {msg.replyTo && (
-                                        <div className="mb-1 pl-2 border-l-2 border-slate-300 dark:border-slate-600">
-                                            <div className="text-xs text-slate-500 dark:text-slate-400 flex items-center gap-1">
-                                                <Reply size={10} />  Replying to {msg.replyTo.user}
-                                            </div>
-                                            <div className="text-xs text-slate-600 dark:text-slate-300 truncate max-w-md">
-                                                {msg.replyTo.content}
-                                            </div>
+                                    <div className="flex-1 min-w-0">
+                                        <div className={`flex items-baseline gap-2 mb-1 ${isMe ? 'justify-end' : 'justify-start'}`}>
+                                            <span className="font-semibold text-slate-800 dark:text-slate-200 truncate">{isMe ? 'You' : msg.user?.name || 'Guest'}</span>
+                                            <span className="text-xs text-slate-500">{msg.time}</span>
                                         </div>
-                                    )}
-                                    <div className="text-slate-700 dark:text-slate-300 leading-relaxed break-words">
-                                        <p>{msg.content}</p>
-                                    </div>
+                                        {msg.replyTo && (
+                                            <div className="mb-1 pl-2 border-l-2 border-slate-300 dark:border-slate-600">
+                                                <div className="text-xs text-slate-500 dark:text-slate-400 flex items-center gap-1">
+                                                    <Reply size={10} />  Replying to {msg.replyTo.user?.name || 'Guest'}
+                                                </div>
+                                                <div className="text-xs text-slate-600 dark:text-slate-300 truncate max-w-md">
+                                                    {msg.replyTo.text}
+                                                </div>
+                                            </div>
+                                        )}
+                                        <div className={`text-slate-700 dark:text-slate-200 leading-relaxed break-words px-4 py-2 rounded-2xl shadow-sm ${isMe ? 'bg-primary-600 text-white rounded-tr-none' : 'bg-white dark:bg-slate-900 border border-slate-200/70 dark:border-slate-700/60 rounded-tl-none'}`}>
+                                            <p>{msg.text}</p>
+                                        </div>
 
-                                    {/* Thread / Reactions */}
-                                    <div className="flex gap-2 mt-2 opacity-0 group-hover:opacity-100 transition-opacity">
-                                        <button
-                                            onClick={() => setReplyingTo(msg)}
-                                            className="flex items-center gap-1 px-2 py-1 rounded bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-xs text-slate-600 dark:text-slate-400 border border-slate-200 dark:border-slate-700 transition-colors"
-                                        >
-                                            <Reply size={12} /> Reply
-                                        </button>
-                                        <button className="flex items-center gap-1 px-2 py-1 rounded bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-xs text-slate-600 dark:text-slate-400 border border-slate-200 dark:border-slate-700 transition-colors">
-                                            <Smile size={12} /> React
-                                        </button>
+                                        <div className={`flex gap-2 mt-2 opacity-0 group-hover:opacity-100 transition-opacity ${isMe ? 'justify-end' : 'justify-start'}`}>
+                                            <button
+                                                onClick={() => setReplyingTo(msg)}
+                                                className="flex items-center gap-1 px-2 py-1 rounded bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-xs text-slate-600 dark:text-slate-400 border border-slate-200 dark:border-slate-700 transition-colors"
+                                            >
+                                                <Reply size={12} /> Reply
+                                            </button>
+                                            <button className="flex items-center gap-1 px-2 py-1 rounded bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-xs text-slate-600 dark:text-slate-400 border border-slate-200 dark:border-slate-700 transition-colors">
+                                                <Smile size={12} /> React
+                                            </button>
+                                        </div>
                                     </div>
                                 </div>
                             </div>
-                        ))}
+                        );
+                        })}
                         <div ref={messagesEndRef} />
                     </div>
 
@@ -238,9 +247,9 @@ const ProfessionalDashboard = () => {
                             <div className="mb-2 flex items-center justify-between p-2 bg-primary-50 dark:bg-slate-800/80 rounded-lg border-l-4 border-primary-500">
                                 <div className="text-sm">
                                     <span className="text-primary-600 dark:text-primary-400 font-medium flex items-center gap-1">
-                                        <Reply size={12} /> Replying to {replyingTo.user}
+                                        <Reply size={12} /> Replying to {replyingTo.user?.name || 'Guest'}
                                     </span>
-                                    <span className="text-slate-500 dark:text-slate-400 truncate block max-w-xs">{replyingTo.content}</span>
+                                    <span className="text-slate-500 dark:text-slate-400 truncate block max-w-xs">{replyingTo.text}</span>
                                 </div>
                                 <button
                                     onClick={() => setReplyingTo(null)}
