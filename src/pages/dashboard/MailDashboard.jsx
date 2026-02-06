@@ -10,7 +10,7 @@ import { io } from 'socket.io-client';
 import { useAuth } from '../../context/AuthContext';
 
 const MailDashboard = () => {
-    const { dashboardThemes } = useTheme();
+    const { currentTheme } = useTheme();
     const [isSidebarOpen, setIsSidebarOpen] = useState(false);
     const [selectedMail, setSelectedMail] = useState(null);
     const [activeFolder, setActiveFolder] = useState('Inbox');
@@ -187,7 +187,7 @@ const MailDashboard = () => {
     };
 
     return (
-        <div className={dashboardThemes.mail === 'dark' ? 'dark' : ''}>
+        <div className={currentTheme === 'dark' ? 'dark' : ''}>
             <div className="w-full flex h-[calc(100vh-8rem)] bg-white dark:bg-primary-950 border border-slate-200 dark:border-primary-900 rounded-2xl overflow-hidden relative">
                 <SettingsModal isOpen={isSettingsOpen} onClose={() => setIsSettingsOpen(false)} scope="mail" />
 
@@ -299,7 +299,7 @@ const MailDashboard = () => {
                                 <div
                                     key={mail.id}
                                     onClick={() => handleEmailClick(mail)}
-                                    className={`p-4 border-b border-slate-100 dark:border-primary-900/10 cursor-pointer hover:bg-primary-50 dark:hover:bg-primary-900/5 transition-colors ${selectedMail?.id === mail.id ? 'bg-primary-100 dark:bg-primary-900/10 border-l-2 border-l-primary-500' : ''} ${!mail.read ? 'bg-slate-100 dark:bg-slate-800/20' : ''}`}
+                                    className={`p-4 border-b border-slate-100 dark:border-primary-900/10 cursor-pointer hover:bg-primary-50/70 dark:hover:bg-primary-900/5 transition-colors ${selectedMail?.id === mail.id ? 'bg-primary-100/70 dark:bg-primary-900/10 border-l-2 border-l-primary-500' : ''} ${!mail.read ? 'bg-slate-100 dark:bg-slate-800/20' : ''}`}
                                 >
                                     <div className="flex justify-between items-start mb-1">
                                         <h4 className={`text-sm font-semibold truncate ${!mail.read ? 'text-slate-900 dark:text-primary-100' : 'text-slate-600 dark:text-slate-300'}`}>

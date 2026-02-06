@@ -68,10 +68,11 @@ const SettingsModal = ({ isOpen, onClose }) => {
                             <button
                                 key={tab.id}
                                 onClick={() => setActiveTab(tab.id)}
-                                className={`flex items-center gap-3 px-4 py-2 md:py-3 rounded-xl transition-all font-medium whitespace-nowrap ${activeTab === tab.id
-                                    ? colors.active
-                                    : 'text-slate-400 hover:text-slate-200 ' + colors.hover
-                                    }`}
+                                className={`flex items-center gap-3 px-4 py-2 md:py-3 rounded-xl transition-all font-medium whitespace-nowrap ${
+                                    activeTab === tab.id
+                                        ? colors.active
+                                        : 'text-slate-400 hover:text-slate-200 ' + colors.hover
+                                }`}
                             >
                                 <tab.icon size={20} />
                                 {tab.label}
