@@ -18,20 +18,20 @@ const SettingsModal = ({ isOpen, onClose, scope = 'professional' }) => {
     ];
 
     return (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm animate-in fade-in duration-200">
-            <div className="w-full max-w-4xl h-[600px] bg-white dark:bg-primary-950 rounded-2xl shadow-2xl flex overflow-hidden border border-slate-200 dark:border-primary-900">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm animate-in fade-in duration-200 px-4">
+            <div className="w-full max-w-4xl max-h-[90vh] md:h-[600px] bg-white dark:bg-primary-950 rounded-2xl shadow-2xl flex flex-col md:flex-row overflow-hidden border border-slate-200 dark:border-primary-900">
                 {/* Sidebar */}
-                <div className="w-64 bg-slate-50 dark:bg-primary-900/50 border-r border-slate-200 dark:border-primary-800 p-4 flex flex-col">
-                    <h2 className="text-xl font-bold text-slate-800 dark:text-primary-100 mb-6 px-2 flex items-center gap-2">
+                <div className="w-full md:w-64 bg-slate-50 dark:bg-primary-900/50 border-b md:border-b-0 md:border-r border-slate-200 dark:border-primary-800 p-4 flex flex-col">
+                    <h2 className="text-xl font-bold text-slate-800 dark:text-primary-100 mb-4 px-2 flex items-center gap-2">
                         <SettingsIcon className="w-6 h-6" />
                         Settings
                     </h2>
-                    <nav className="space-y-1 flex-1">
+                    <nav className="flex md:flex-col gap-2 md:gap-1 overflow-x-auto md:overflow-visible pb-2 md:pb-0">
                         {tabs.map((tab) => (
                             <button
                                 key={tab.id}
                                 onClick={() => setActiveTab(tab.id)}
-                                className={`w-full flex items-center gap-3 px-3 py-2 rounded-lg transition-colors text-sm font-medium
+                                className={`flex items-center gap-3 px-3 py-2 rounded-lg transition-colors text-sm font-medium whitespace-nowrap
                                     ${activeTab === tab.id
                                         ? 'bg-blue-100 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400'
                                         : 'text-slate-600 dark:text-slate-400 hover:bg-slate-200 dark:hover:bg-slate-800 hover:text-slate-900 dark:hover:text-white'

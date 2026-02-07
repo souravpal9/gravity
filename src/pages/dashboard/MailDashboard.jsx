@@ -6,13 +6,19 @@ import TemplateToggle from '../../components/common/TemplateToggle';
 import SettingsModal from '../../components/common/SettingsModal';
 import { useTheme } from '../../context/ThemeContext';
 import { mailService } from '../../services/mailService';
+import { io } from 'socket.io-client';
+import { useAuth } from '../../context/AuthContext';
 
 const MailDashboard = () => {
-    const { dashboardThemes } = useTheme();
+    const { currentTheme } = useTheme();
     const [isSidebarOpen, setIsSidebarOpen] = useState(false);
     const [selectedMail, setSelectedMail] = useState(null);
     const [activeFolder, setActiveFolder] = useState('Inbox');
     const [mails, setMails] = useState([]);
+    const { user } = useAuth();
+    const [mailStatus, setMailStatus] = useState('connecting');
+    const socketRef = useRef(null);
+    const serverUrl = import.meta.env.VITE_BACKEND_URL || 'http://localhost:5174';
 
     // Reply state
     const [isReplying, setIsReplying] = useState(false);
@@ -34,6 +40,38 @@ const MailDashboard = () => {
     useEffect(() => {
         refreshMails();
     }, [activeFolder]);
+
+    useEffect(() => {
+        const socket = io(serverUrl, { transports: ['websocket'] });
+        socketRef.current = socket;
+
+        socket.on('connect', () => {
+            setMailStatus('online');
+            socket.emit('room:join', { room: 'mail', user });
+        });
+
+        socket.on('disconnect', () => {
+            setMailStatus('offline');
+        });
+
+        socket.on('mail:message', (payload) => {
+            if (payload?.from?.email && payload.from.email === user?.email) return;
+            mailService.createMail({
+                to: payload.to,
+                from: payload.from,
+                subject: payload.subject,
+                body: payload.body,
+                folder: 'Inbox'
+            });
+            if (activeFolder === 'Inbox') {
+                refreshMails();
+            }
+        });
+
+        return () => {
+            socket.disconnect();
+        };
+    }, [serverUrl, user, activeFolder]);
 
     const refreshMails = () => {
         const fetchedMails = mailService.getMailsByFolder(activeFolder);
@@ -79,12 +117,19 @@ const MailDashboard = () => {
     const handleSendReply = () => {
         if (!replyText.trim()) return;
         // For prototype: add a "reply" mail to Sent folder
-        mailService.createMail({
+        const replyPayload = {
             to: selectedMail.from.email,
-            from: { name: 'Me', email: 'me@example.com' },
+            from: { name: user?.name || 'Me', email: user?.email || 'me@example.com' },
             subject: `Re: ${selectedMail.subject} `,
-            body: replyText,
+            body: replyText
+        };
+        mailService.createMail({
+            ...replyPayload,
             folder: 'Sent'
+        });
+        socketRef.current?.emit('mail:send', {
+            room: 'mail',
+            ...replyPayload
         });
 
         setIsReplying(false);
@@ -99,13 +144,17 @@ const MailDashboard = () => {
             return;
         }
 
-        mailService.createMail({
+        const mailPayload = {
             to: composeTo,
-            from: { name: 'Me', email: 'me@example.com' },
+            from: { name: user?.name || 'Me', email: user?.email || 'me@example.com' },
             subject: composeSubject,
-            body: composeBody,
+            body: composeBody
+        };
+        mailService.createMail({
+            ...mailPayload,
             folder: 'Sent' // Explicitly set to Sent, although service defaults to Sent
         });
+        socketRef.current?.emit('mail:send', { room: 'mail', ...mailPayload });
 
         setIsComposeOpen(false);
         setComposeTo('');
@@ -138,7 +187,7 @@ const MailDashboard = () => {
     };
 
     return (
-        <div className={dashboardThemes.mail === 'dark' ? 'dark' : ''}>
+        <div className={currentTheme === 'dark' ? 'dark' : ''}>
             <div className="w-full flex h-[calc(100vh-8rem)] bg-white dark:bg-primary-950 border border-slate-200 dark:border-primary-900 rounded-2xl overflow-hidden relative">
                 <SettingsModal isOpen={isSettingsOpen} onClose={() => setIsSettingsOpen(false)} scope="mail" />
 
@@ -157,7 +206,12 @@ const MailDashboard = () => {
                 ${isMobile ? (isSidebarOpen ? 'translate-x-0' : '-translate-x-full') : 'translate-x-0'}
             `}>
                     <div className="flex justify-between items-center mb-6 md:hidden">
+                    <div className="flex items-center justify-between">
                         <h2 className="font-bold text-slate-800 dark:text-primary-100">Mailboxes</h2>
+                        <span className={`text-xs font-semibold ${mailStatus === 'online' ? 'text-emerald-500' : 'text-slate-400'}`}>
+                            {mailStatus === 'online' ? 'Live' : 'Offline'}
+                        </span>
+                    </div>
                         <button onClick={() => setIsSidebarOpen(false)} className="text-slate-500 dark:text-slate-400">
                             <X size={20} />
                         </button>
@@ -238,14 +292,14 @@ const MailDashboard = () => {
                     <div className="flex-1 overflow-y-auto">
                         {mails.length === 0 ? (
                             <div className="p-8 text-center text-slate-500 text-sm">
-                                No mails in {activeFolder}
+                                No messages in {activeFolder}
                             </div>
                         ) : (
                             mails.map((mail) => (
                                 <div
                                     key={mail.id}
                                     onClick={() => handleEmailClick(mail)}
-                                    className={`p-4 border-b border-slate-100 dark:border-primary-900/10 cursor-pointer hover:bg-primary-50 dark:hover:bg-primary-900/5 transition-colors ${selectedMail?.id === mail.id ? 'bg-primary-100 dark:bg-primary-900/10 border-l-2 border-l-primary-500' : ''} ${!mail.read ? 'bg-slate-100 dark:bg-slate-800/20' : ''}`}
+                                    className={`p-4 border-b border-slate-100 dark:border-primary-900/10 cursor-pointer hover:bg-primary-50/70 dark:hover:bg-primary-900/5 transition-colors ${selectedMail?.id === mail.id ? 'bg-primary-100/70 dark:bg-primary-900/10 border-l-2 border-l-primary-500' : ''} ${!mail.read ? 'bg-slate-100 dark:bg-slate-800/20' : ''}`}
                                 >
                                     <div className="flex justify-between items-start mb-1">
                                         <h4 className={`text-sm font-semibold truncate ${!mail.read ? 'text-slate-900 dark:text-primary-100' : 'text-slate-600 dark:text-slate-300'}`}>
