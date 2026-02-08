@@ -3,7 +3,7 @@ import { io } from 'socket.io-client';
 
 const DEFAULT_SERVER_URL = 'http://localhost:5174';
 
-export const useRealtimeChat = ({ room, user }) => {
+export const useRealtimeChat = ({ room, user, mockMessages = [] }) => {
     const [messages, setMessages] = useState([]);
     const [status, setStatus] = useState('connecting');
     const socketRef = useRef(null);
@@ -22,6 +22,14 @@ export const useRealtimeChat = ({ room, user }) => {
             setStatus('offline');
             return;
         }
+
+        // Initialize with mock messages if provided
+        if (mockMessages && mockMessages.length > 0) {
+            setMessages(mockMessages);
+        } else {
+            setMessages([]);
+        }
+
         const socket = io(serverUrl, { transports: ['websocket'] });
         socketRef.current = socket;
 
@@ -34,8 +42,8 @@ export const useRealtimeChat = ({ room, user }) => {
             setStatus('offline');
         });
 
-        socket.on('room:history', (history = []) => {
-            setMessages(history);
+        socket.on('room:history', (history) => {
+            setMessages(Array.isArray(history) ? history : []);
         });
 
         socket.on('chat:message', (message) => {
@@ -48,9 +56,9 @@ export const useRealtimeChat = ({ room, user }) => {
     }, [room, serverUrl, user]);
 
     const sendMessage = (text, options = {}) => {
-        if (!socketRef.current || !text.trim()) return;
+        if (!text.trim()) return;
         const message = {
-            id: crypto.randomUUID(),
+            id: Date.now().toString() + Math.random().toString(36).substr(2, 9),
             room,
             text,
             time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
@@ -60,7 +68,13 @@ export const useRealtimeChat = ({ room, user }) => {
             },
             replyTo: options.replyTo || null
         };
-        socketRef.current.emit('chat:message', message);
+
+        // Optimistic update
+        setMessages((prev) => [...prev, message]);
+
+        if (socketRef.current) {
+            socketRef.current.emit('chat:message', message);
+        }
     };
 
     return { messages, sendMessage, status };

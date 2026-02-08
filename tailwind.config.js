@@ -20,7 +20,8 @@ export default {
                     800: 'var(--color-primary-800)',
                     900: 'var(--color-primary-900)',
                     950: 'var(--color-primary-950)',
-                }
+                },
+                'whatsapp-beige': '#efeae2',
             }
         },
     },

@@ -74,7 +74,12 @@ export const mailService = {
 
     getAllMails: () => {
         const stored = localStorage.getItem(STORAGE_KEY);
-        return stored ? JSON.parse(stored) : [];
+        try {
+            return stored ? JSON.parse(stored) : [];
+        } catch (e) {
+            console.error('Failed to parse mails from localStorage', e);
+            return [];
+        }
     },
 
     getMailsByFolder: (folder) => {

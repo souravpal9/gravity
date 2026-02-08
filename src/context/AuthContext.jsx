@@ -7,7 +7,12 @@ const SESSION_KEY = 'gravity_session';
 
 const readUsers = () => {
     const stored = localStorage.getItem(USERS_KEY);
-    return stored ? JSON.parse(stored) : [];
+    try {
+        return stored ? JSON.parse(stored) : [];
+    } catch (e) {
+        console.error('Failed to parse users from localStorage', e);
+        return [];
+    }
 };
 
 const writeUsers = (users) => {
@@ -16,7 +21,12 @@ const writeUsers = (users) => {
 
 const readSession = () => {
     const stored = localStorage.getItem(SESSION_KEY);
-    return stored ? JSON.parse(stored) : null;
+    try {
+        return stored ? JSON.parse(stored) : null;
+    } catch (e) {
+        console.error('Failed to parse session from localStorage', e);
+        return null;
+    }
 };
 
 const writeSession = (session) => {

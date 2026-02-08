@@ -3,7 +3,7 @@ import { Outlet } from 'react-router-dom';
 import { Settings } from 'lucide-react';
 import ModeToggle from './ModeToggle';
 import ThemeToggle from './ThemeToggle';
-import SettingsModal from '../settings/SettingsModal';
+import SettingsModal from '../common/SettingsModal';
 import { useTheme } from '../../context/ThemeContext';
 
 const MainLayout = () => {
@@ -11,35 +11,19 @@ const MainLayout = () => {
     const { mode, currentTheme } = useTheme();
 
     const getThemeStyles = () => {
-        const isDark = currentTheme === 'dark';
-        switch (mode) {
-            case 'professional':
-                return {
-                    bg: isDark ? 'bg-slate-900' : 'bg-slate-100',
-                    text: isDark ? 'text-slate-100' : 'text-slate-900',
-                    headerBg: isDark ? 'bg-slate-900/80 border-slate-700' : 'bg-white/80 border-slate-200',
-                    logoBg: isDark ? 'bg-blue-600' : 'bg-blue-500',
-                    title: 'ProConnect'
-                };
-            case 'personal':
-                return {
-                    bg: isDark ? 'bg-slate-950' : 'bg-emerald-50',
-                    text: isDark ? 'text-emerald-50' : 'text-emerald-950',
-                    headerBg: isDark ? 'bg-slate-950/80 border-emerald-900/30' : 'bg-emerald-50/80 border-emerald-200',
-                    logoBg: isDark ? 'bg-emerald-600' : 'bg-emerald-500',
-                    title: 'Personal'
-                };
-            case 'mail':
-                return {
-                    bg: isDark ? 'bg-slate-950' : 'bg-purple-50',
-                    text: isDark ? 'text-purple-50' : 'text-purple-950',
-                    headerBg: isDark ? 'bg-slate-950/80 border-purple-900/30' : 'bg-purple-50/80 border-purple-200',
-                    logoBg: isDark ? 'bg-purple-600' : 'bg-purple-500',
-                    title: 'MailBox'
-                };
-            default:
-                return {};
-        }
+        // Strict Dual Tone: 
+        // Light: White Sidebar, Slate-100 Main.
+        // Dark: Slate-900 Sidebar, Slate-950 Main.
+        return {
+            bg: mode === 'personal' ? 'bg-whatsapp-beige dark:bg-slate-950' :
+                mode === 'professional' ? 'bg-theme-blue dark:bg-slate-950' :
+                    mode === 'mail' ? 'bg-theme-purple dark:bg-slate-950' :
+                        'bg-slate-50 dark:bg-slate-950', // Fallback
+            text: 'text-slate-950 dark:text-slate-100',
+            headerBg: 'bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-800', // Sidebar/Header background
+            logoBg: 'bg-primary-600', // Keep brand logo
+            title: mode === 'professional' ? 'ProConnect' : mode === 'personal' ? 'Personal' : 'MailBox'
+        };
     };
 
     const styles = getThemeStyles();
@@ -52,7 +36,7 @@ const MainLayout = () => {
       `}>
                 <div className="flex items-center justify-between w-full sm:w-auto">
                     <div className="flex items-center gap-3">
-                        <div className={`w-8 h-8 rounded-lg flex items-center justify-center font-bold text-xl transition-colors duration-500 ${styles.logoBg}`}>
+                        <div className={`w-8 h-8 rounded-lg flex items-center justify-center font-bold text-xl text-white transition-colors duration-500 ${styles.logoBg}`}>
                             {styles.title[0]}
                         </div>
                         <h1 className="font-bold text-xl tracking-tight">

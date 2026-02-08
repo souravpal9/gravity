@@ -1,12 +1,14 @@
+
 import React, { useState } from 'react';
 import { X, Moon, Sun, Monitor, Settings as SettingsIcon, Bell, Shield, User } from 'lucide-react';
 import { useTheme } from '../../context/ThemeContext';
 
 const SettingsModal = ({ isOpen, onClose, scope = 'professional' }) => {
     const [activeTab, setActiveTab] = useState('appearance');
-    const { dashboardThemes, setTheme } = useTheme();
+    const { currentTheme, setTheme, themeTemplate, toggleTemplate } = useTheme();
 
-    const currentTheme = dashboardThemes[scope];
+    // In global mode, we just use the current global theme
+    const isDark = currentTheme === 'dark';
 
     if (!isOpen) return null;
 
@@ -31,11 +33,11 @@ const SettingsModal = ({ isOpen, onClose, scope = 'professional' }) => {
                             <button
                                 key={tab.id}
                                 onClick={() => setActiveTab(tab.id)}
-                                className={`flex items-center gap-3 px-3 py-2 rounded-lg transition-colors text-sm font-medium whitespace-nowrap
+                                className={`flex items - center gap - 3 px - 3 py - 2 rounded - lg transition - colors text - sm font - medium whitespace - nowrap
                                     ${activeTab === tab.id
                                         ? 'bg-blue-100 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400'
                                         : 'text-slate-600 dark:text-slate-400 hover:bg-slate-200 dark:hover:bg-slate-800 hover:text-slate-900 dark:hover:text-white'
-                                    }`}
+                                    } `}
                             >
                                 <tab.icon size={18} />
                                 {tab.label}
@@ -64,11 +66,11 @@ const SettingsModal = ({ isOpen, onClose, scope = 'professional' }) => {
                                 <div className="grid grid-cols-2 gap-4">
                                     <button
                                         onClick={() => setTheme(scope, 'light')}
-                                        className={`p-4 rounded-xl border-2 transition-all flex flex-col items-center gap-3
+                                        className={`p - 4 rounded - xl border - 2 transition - all flex flex - col items - center gap - 3
                                                 ${currentTheme === 'light'
                                                 ? 'border-blue-500 bg-blue-50 dark:bg-blue-900/10'
                                                 : 'border-slate-200 dark:border-slate-800 hover:border-slate-300 dark:hover:border-slate-700'
-                                            }`}
+                                            } `}
                                     >
                                         <div className="w-full aspect-video bg-slate-100 rounded-lg border border-slate-200 relative overflow-hidden group-hover:shadow-sm transition-shadow">
                                             {/* Mock UI for Light Mode */}
@@ -82,17 +84,17 @@ const SettingsModal = ({ isOpen, onClose, scope = 'professional' }) => {
                                         </div>
                                         <div className="flex items-center gap-2">
                                             <Sun size={18} className={currentTheme === 'light' ? 'text-blue-500' : 'text-slate-400'} />
-                                            <span className={`font-medium ${currentTheme === 'light' ? 'text-blue-700 dark:text-blue-400' : 'text-slate-600 dark:text-slate-400'}`}>Light Mode</span>
+                                            <span className={`font - medium ${currentTheme === 'light' ? 'text-blue-700 dark:text-blue-400' : 'text-slate-600 dark:text-slate-400'} `}>Light Mode</span>
                                         </div>
                                     </button>
 
                                     <button
                                         onClick={() => setTheme(scope, 'dark')}
-                                        className={`p-4 rounded-xl border-2 transition-all flex flex-col items-center gap-3
+                                        className={`p - 4 rounded - xl border - 2 transition - all flex flex - col items - center gap - 3
                                                 ${currentTheme === 'dark'
                                                 ? 'border-blue-500 bg-blue-50 dark:bg-blue-900/10'
                                                 : 'border-slate-200 dark:border-slate-800 hover:border-slate-300 dark:hover:border-slate-700'
-                                            }`}
+                                            } `}
                                     >
                                         <div className="w-full aspect-video bg-slate-900 rounded-lg border border-slate-800 relative overflow-hidden group-hover:shadow-sm transition-shadow">
                                             {/* Mock UI for Dark Mode */}
@@ -106,7 +108,7 @@ const SettingsModal = ({ isOpen, onClose, scope = 'professional' }) => {
                                         </div>
                                         <div className="flex items-center gap-2">
                                             <Moon size={18} className={currentTheme === 'dark' ? 'text-blue-500' : 'text-slate-400'} />
-                                            <span className={`font-medium ${currentTheme === 'dark' ? 'text-blue-700 dark:text-blue-400' : 'text-slate-600 dark:text-slate-400'}`}>Dark Mode</span>
+                                            <span className={`font - medium ${currentTheme === 'dark' ? 'text-blue-700 dark:text-blue-400' : 'text-slate-600 dark:text-slate-400'} `}>Dark Mode</span>
                                         </div>
                                     </button>
                                 </div>

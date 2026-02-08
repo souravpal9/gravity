@@ -21,7 +21,7 @@ function App() {
   const { isAuthenticated } = useAuth();
 
   return (
-    <div className={getThemeClass()}>
+    <div className={`min-h-screen transition-colors duration-200 ${getThemeClass()}`}>
       <Routes>
         <Route path="/" element={<MainLayout />}>
           <Route index element={<AuthSelection />} />
