@@ -18,13 +18,30 @@ const DashboardRoute = () => {
 
 function App() {
   const { getThemeClass } = useTheme();
-  const { isAuthenticated } = useAuth();
+  const { isAuthenticated, isLoading } = useAuth();
+
+  if (isLoading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-white dark:bg-slate-950">
+        <div className="w-8 h-8 border-4 border-primary-500 border-t-transparent rounded-full animate-spin" />
+      </div>
+    );
+  }
 
   return (
-    <div className={`min-h-screen transition-colors duration-200 ${getThemeClass()}`}>
+    <div className={`min-h-screen transition-colors duration-300 ${getThemeClass()}`}>
       <Routes>
         <Route path="/" element={<MainLayout />}>
-          <Route index element={<AuthSelection />} />
+
+          {/* Root: unauthenticated → pick mode, authenticated → dashboard */}
+          <Route
+            index
+            element={isAuthenticated ? <Navigate to="/dashboard" replace /> : <AuthSelection />}
+          />
+
+          {/* /select-mode: always accessible — lets authenticated users switch mode */}
+          <Route path="select-mode" element={<AuthSelection />} />
+
           <Route
             path="login"
             element={isAuthenticated ? <Navigate to="/dashboard" replace /> : <Login />}
@@ -37,7 +54,6 @@ function App() {
             path="dashboard"
             element={isAuthenticated ? <DashboardRoute /> : <Navigate to="/login" replace />}
           />
-          {/* Catch all redirect */}
           <Route path="*" element={<Navigate to="/" replace />} />
         </Route>
       </Routes>

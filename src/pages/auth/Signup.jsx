@@ -1,181 +1,186 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useTheme } from '../../context/ThemeContext';
 import { useAuth } from '../../context/AuthContext';
-import { Mail, Lock, User, ArrowRight, Briefcase, MessageCircle } from 'lucide-react';
+import { Mail, Lock, User, ArrowRight, Eye, EyeOff } from 'lucide-react';
 
 const Signup = () => {
-    const { mode, currentTheme } = useTheme();
-    const { signup, error } = useAuth();
+    const { mode, isDark } = useTheme();
+    const { signup } = useAuth();
     const navigate = useNavigate();
+
     const [name, setName] = useState('');
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
-    const [formError, setFormError] = useState('');
-    const isDark = currentTheme === 'dark';
+    const [showPassword, setShowPassword] = useState(false);
+    const [error, setError] = useState('');
+    const [isLoading, setIsLoading] = useState(false);
+
+    useEffect(() => { setError(''); }, [name, email, password]);
 
     const handleSubmit = (e) => {
         e.preventDefault();
-        setFormError('');
-        const result = signup({ name, email, password, mode });
-        if (!result.ok) {
-            setFormError('Unable to create your account. Try a different email.');
-            return;
-        }
-        navigate('/dashboard');
+        setError('');
+
+        if (!name.trim()) { setError('Please enter your name.'); return; }
+        if (!email.trim()) { setError('Please enter your email.'); return; }
+        if (password.length < 6) { setError('Password must be at least 6 characters.'); return; }
+
+        setIsLoading(true);
+        setTimeout(() => {
+            const result = signup({ name: name.trim(), email: email.trim(), password, mode });
+            setIsLoading(false);
+
+            if (!result.ok) {
+                setError('An account with this email already exists.');
+                return;
+            }
+            navigate('/dashboard', { replace: true });
+        }, 50);
     };
 
-    const getModeConfig = () => {
-        switch (mode) {
-            case 'personal':
-                return {
-                    icon: MessageCircle,
-                    themeColor: 'emerald',
-                    bgColor: isDark ? 'bg-emerald-500/20' : 'bg-emerald-100',
-                    textColor: isDark ? 'text-emerald-400' : 'text-emerald-600',
-                    borderColor: isDark ? 'border-emerald-900/30' : 'border-emerald-200',
-                    shadowColor: isDark ? 'shadow-emerald-900/10' : 'shadow-emerald-200/60',
-                    buttonBg: 'bg-emerald-600 hover:bg-emerald-500',
-                    buttonShadow: 'shadow-emerald-600/20',
-                    linkText: isDark ? 'text-emerald-400' : 'text-emerald-600',
-                    inputFocus: 'focus:border-emerald-500 focus:ring-emerald-500/20'
-                };
-            case 'mail':
-                return {
-                    icon: Mail,
-                    themeColor: 'purple',
-                    bgColor: isDark ? 'bg-purple-500/20' : 'bg-purple-100',
-                    textColor: isDark ? 'text-purple-400' : 'text-purple-600',
-                    borderColor: isDark ? 'border-purple-900/30' : 'border-purple-200',
-                    shadowColor: isDark ? 'shadow-purple-900/10' : 'shadow-purple-200/60',
-                    buttonBg: 'bg-purple-600 hover:bg-purple-500',
-                    buttonShadow: 'shadow-purple-600/20',
-                    linkText: isDark ? 'text-purple-400' : 'text-purple-600',
-                    inputFocus: 'focus:border-purple-500 focus:ring-purple-500/20'
-                };
-            case 'professional':
-            default:
-                return {
-                    icon: Briefcase,
-                    themeColor: 'blue',
-                    bgColor: isDark ? 'bg-blue-500/20' : 'bg-blue-100',
-                    textColor: isDark ? 'text-blue-400' : 'text-blue-600',
-                    borderColor: isDark ? 'border-slate-700' : 'border-blue-200',
-                    shadowColor: isDark ? 'shadow-blue-900/10' : 'shadow-blue-200/60',
-                    buttonBg: 'bg-blue-600 hover:bg-blue-500',
-                    buttonShadow: 'shadow-blue-600/20',
-                    linkText: isDark ? 'text-blue-400' : 'text-blue-600',
-                    inputFocus: 'focus:border-blue-500 focus:ring-blue-500/20'
-                };
-        }
+    const modeConfig = {
+        professional: {
+            accent: 'blue',
+            gradient: 'from-blue-600 to-blue-400',
+            ring: 'focus:ring-blue-500/30',
+            border: 'focus:border-blue-500',
+            btn: 'from-blue-600 to-blue-500 hover:from-blue-700 hover:to-blue-600 shadow-blue-500/25',
+            label: 'Workspace',
+        },
+        personal: {
+            accent: 'emerald',
+            gradient: 'from-emerald-500 to-teal-400',
+            ring: 'focus:ring-emerald-500/30',
+            border: 'focus:border-emerald-500',
+            btn: 'from-emerald-600 to-emerald-500 hover:from-emerald-700 hover:to-emerald-600 shadow-emerald-500/25',
+            label: 'Personal',
+        },
+        mail: {
+            accent: 'purple',
+            gradient: 'from-purple-600 to-purple-400',
+            ring: 'focus:ring-purple-500/30',
+            border: 'focus:border-purple-500',
+            btn: 'from-purple-600 to-purple-500 hover:from-purple-700 hover:to-purple-600 shadow-purple-500/25',
+            label: 'Mail',
+        },
     };
 
-    const config = getModeConfig();
-    const ModeIcon = config.icon;
+    const cfg = modeConfig[mode] || modeConfig.professional;
+
+    const inputClass = (extra = '') => `w-full py-2.5 rounded-xl border text-sm transition-all focus:outline-none focus:ring-2
+        ${isDark ? 'bg-slate-800 border-slate-700 text-white placeholder-slate-500' : 'bg-slate-50 border-slate-200 text-slate-900 placeholder-slate-400'}
+        ${cfg.ring} ${cfg.border} ${extra}`;
 
     return (
         <div className="flex items-center justify-center min-h-[80vh] px-4">
-            <div className={`
-        w-full max-w-md p-8 rounded-2xl border backdrop-blur-sm transition-all duration-500 shadow-xl
-        ${isDark ? 'bg-slate-900/50' : 'bg-white'}
-        ${config.borderColor} ${config.shadowColor}
-      `}>
+            <div className={`w-full max-w-md ${isDark ? 'bg-slate-900 border-slate-800' : 'bg-white border-slate-200'} border rounded-2xl shadow-xl p-8`}>
+
+                {/* Header */}
                 <div className="text-center mb-8">
-                    <div className={`
-            w-16 h-16 mx-auto mb-4 rounded-2xl flex items-center justify-center transition-colors duration-500
-            ${config.bgColor} ${config.textColor}
-          `}>
-                        <ModeIcon size={32} />
+                    <div className={`w-14 h-14 mx-auto mb-4 rounded-2xl bg-gradient-to-br ${cfg.gradient} flex items-center justify-center shadow-lg`}>
+                        <User size={26} className="text-white" />
                     </div>
-                    <h2 className={`text-3xl font-bold mb-2 ${isDark ? 'text-white' : 'text-slate-900'}`}>Create Account</h2>
-                    <p className={`${isDark ? 'text-slate-400' : 'text-slate-600'} capitalize`}>
-                        Join the {mode} network
+                    <h1 className={`text-2xl font-bold mb-1 ${isDark ? 'text-white' : 'text-slate-900'}`}>Create account</h1>
+                    <p className={`text-sm capitalize ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>
+                        Join the {cfg.label} network
                     </p>
                 </div>
 
-                <form onSubmit={handleSubmit} className="space-y-6">
-                    {(formError || error) && (
-                        <div className="rounded-xl border border-red-500/40 bg-red-500/10 px-4 py-3 text-sm text-red-200">
-                            {formError || error}
-                        </div>
-                    )}
-                    <div className="space-y-2">
-                        <label className={`text-sm font-medium ${isDark ? 'text-slate-300' : 'text-slate-700'}`}>Full Name</label>
+                {/* Error */}
+                {error && (
+                    <div className="mb-5 px-4 py-3 rounded-xl bg-red-50 dark:bg-red-950/50 border border-red-200 dark:border-red-900 text-red-600 dark:text-red-400 text-sm flex items-center gap-2">
+                        <span className="w-1.5 h-1.5 rounded-full bg-red-500 flex-shrink-0" />
+                        {error}
+                    </div>
+                )}
+
+                <form onSubmit={handleSubmit} className="space-y-4" noValidate>
+                    {/* Name */}
+                    <div>
+                        <label className={`block text-sm font-medium mb-1.5 ${isDark ? 'text-slate-300' : 'text-slate-700'}`}>Full name</label>
                         <div className="relative">
-                            <User className={`absolute left-3 top-1/2 -translate-y-1/2 ${isDark ? 'text-slate-500' : 'text-slate-400'}`} size={20} />
+                            <User size={16} className={`absolute left-3.5 top-1/2 -translate-y-1/2 ${isDark ? 'text-slate-500' : 'text-slate-400'}`} />
                             <input
                                 type="text"
                                 value={name}
-                                onChange={(e) => setName(e.target.value)}
-                                className={`
-                  w-full pl-10 pr-4 py-3 rounded-xl border focus:outline-none focus:ring-2 transition-all
-                  ${isDark ? 'bg-slate-950/50 text-white placeholder:text-slate-500' : 'bg-white text-slate-900 placeholder:text-slate-400'}
-                  ${config.borderColor} ${config.inputFocus}
-                `}
+                                onChange={e => setName(e.target.value)}
+                                autoComplete="name"
                                 placeholder="John Doe"
-                                required
+                                className={inputClass('pl-10 pr-4')}
                             />
                         </div>
                     </div>
 
-                    <div className="space-y-2">
-                        <label className={`text-sm font-medium ${isDark ? 'text-slate-300' : 'text-slate-700'}`}>Email Address</label>
+                    {/* Email */}
+                    <div>
+                        <label className={`block text-sm font-medium mb-1.5 ${isDark ? 'text-slate-300' : 'text-slate-700'}`}>Email address</label>
                         <div className="relative">
-                            <Mail className={`absolute left-3 top-1/2 -translate-y-1/2 ${isDark ? 'text-slate-500' : 'text-slate-400'}`} size={20} />
+                            <Mail size={16} className={`absolute left-3.5 top-1/2 -translate-y-1/2 ${isDark ? 'text-slate-500' : 'text-slate-400'}`} />
                             <input
                                 type="email"
                                 value={email}
-                                onChange={(e) => setEmail(e.target.value)}
-                                className={`
-                  w-full pl-10 pr-4 py-3 rounded-xl border focus:outline-none focus:ring-2 transition-all
-                  ${isDark ? 'bg-slate-950/50 text-white placeholder:text-slate-500' : 'bg-white text-slate-900 placeholder:text-slate-400'}
-                  ${config.borderColor} ${config.inputFocus}
-                `}
-                                placeholder="name@example.com"
-                                required
+                                onChange={e => setEmail(e.target.value)}
+                                autoComplete="email"
+                                placeholder="you@example.com"
+                                className={inputClass('pl-10 pr-4')}
                             />
                         </div>
                     </div>
 
-                    <div className="space-y-2">
-                        <label className={`text-sm font-medium ${isDark ? 'text-slate-300' : 'text-slate-700'}`}>Password</label>
+                    {/* Password */}
+                    <div>
+                        <label className={`block text-sm font-medium mb-1.5 ${isDark ? 'text-slate-300' : 'text-slate-700'}`}>Password</label>
                         <div className="relative">
-                            <Lock className={`absolute left-3 top-1/2 -translate-y-1/2 ${isDark ? 'text-slate-500' : 'text-slate-400'}`} size={20} />
+                            <Lock size={16} className={`absolute left-3.5 top-1/2 -translate-y-1/2 ${isDark ? 'text-slate-500' : 'text-slate-400'}`} />
                             <input
-                                type="password"
+                                type={showPassword ? 'text' : 'password'}
                                 value={password}
-                                onChange={(e) => setPassword(e.target.value)}
-                                className={`
-                  w-full pl-10 pr-4 py-3 rounded-xl border focus:outline-none focus:ring-2 transition-all
-                  ${isDark ? 'bg-slate-950/50 text-white placeholder:text-slate-500' : 'bg-white text-slate-900 placeholder:text-slate-400'}
-                  ${config.borderColor} ${config.inputFocus}
-                `}
-                                placeholder="••••••••"
-                                required
+                                onChange={e => setPassword(e.target.value)}
+                                autoComplete="new-password"
+                                placeholder="Min. 6 characters"
+                                className={inputClass('pl-10 pr-10')}
                             />
+                            <button
+                                type="button"
+                                onClick={() => setShowPassword(v => !v)}
+                                className={`absolute right-3.5 top-1/2 -translate-y-1/2 ${isDark ? 'text-slate-500 hover:text-slate-300' : 'text-slate-400 hover:text-slate-600'}`}
+                            >
+                                {showPassword ? <EyeOff size={16} /> : <Eye size={16} />}
+                            </button>
                         </div>
+                        {/* Strength indicator */}
+                        {password.length > 0 && (
+                            <div className="mt-1.5 flex gap-1">
+                                {[...Array(4)].map((_, i) => (
+                                    <div key={i} className={`h-1 flex-1 rounded-full transition-colors ${password.length >= (i + 1) * 2
+                                        ? password.length < 6 ? 'bg-red-400' : password.length < 10 ? 'bg-yellow-400' : 'bg-green-400'
+                                        : isDark ? 'bg-slate-700' : 'bg-slate-200'
+                                        }`} />
+                                ))}
+                            </div>
+                        )}
                     </div>
 
                     <button
                         type="submit"
-                        className={`
-              w-full py-3 rounded-xl font-bold flex items-center justify-center gap-2 transition-all text-white shadow-lg
-              ${config.buttonBg} ${config.buttonShadow}
-            `}
+                        disabled={isLoading}
+                        className={`w-full py-2.5 mt-2 rounded-xl font-semibold text-white text-sm flex items-center justify-center gap-2 bg-gradient-to-r ${cfg.btn} shadow-lg transition-all transform active:scale-[0.98] disabled:opacity-60 disabled:cursor-not-allowed`}
                     >
-                        Create Account <ArrowRight size={20} />
+                        {isLoading ? (
+                            <span className="w-4 h-4 border-2 border-white/50 border-t-white rounded-full animate-spin" />
+                        ) : (
+                            <>Create Account <ArrowRight size={16} /></>
+                        )}
                     </button>
                 </form>
 
-                <div className={`mt-6 text-center ${isDark ? 'text-slate-400' : 'text-slate-600'}`}>
+                <p className={`mt-6 text-center text-sm ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>
                     Already have an account?{' '}
-                    <Link
-                        to="/login"
-                        className={`font-medium hover:underline ${config.linkText}`}
-                    >
+                    <Link to="/login" className={`font-semibold hover:underline text-${cfg.accent}-${isDark ? '400' : '600'}`}>
                         Sign in
                     </Link>
-                </div>
+                </p>
             </div>
         </div>
     );

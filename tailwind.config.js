@@ -1,13 +1,15 @@
 /** @type {import('tailwindcss').Config} */
 export default {
+    // CRITICAL: enables .dark class-based dark mode (toggled by ThemeContext)
+    darkMode: 'class',
     content: [
-        "./index.html",
-        "./src/**/*.{js,ts,jsx,tsx}",
+        './index.html',
+        './src/**/*.{js,ts,jsx,tsx}',
     ],
-    darkMode: 'class', // Enable class-based dark mode
     theme: {
         extend: {
             colors: {
+                // Maps primary-* utilities to CSS variables set by theme classes
                 primary: {
                     50: 'var(--color-primary-50)',
                     100: 'var(--color-primary-100)',
@@ -21,9 +23,8 @@ export default {
                     900: 'var(--color-primary-900)',
                     950: 'var(--color-primary-950)',
                 },
-                'whatsapp-beige': '#efeae2',
-            }
+            },
         },
     },
     plugins: [],
-}
+};
